@@ -1,23 +1,18 @@
 #include <Arduino.h>
 #include "DebounceInput.h"
-
-// Declare a class for program state
-class ProgramState {
-  public:
-    ProgramState();
-    unsigned long last_cycle_start;
-    unsigned long last_motion_detected;
-};
+#include "ProgramState.h"
 
 // PWM stuff
 const int PWM_CHANNEL = 0;
 const int PWM_FREQ = 5000;
 const int PWM_RESOLUTION = 12;
 const int MAX_PWM = (1 << PWM_RESOLUTION) - 1; // Clever way to get 2^PWM_RESOLUTION - 1
-const int LED_PWM_OUTPUT_PIN = A0;
+// const int LED_PWM_OUTPUT_PIN = A4;
 const int full_cycle_time = 40000;
 const int scale_factor = full_cycle_time/MAX_PWM;
 
+// set up program state in global scope
+ProgramState program_state;
 
 // Declare a function to set the LED
 void set_led(ProgramState &state);
@@ -26,8 +21,10 @@ void set_led(ProgramState &state);
 DebounceInput button_a(D6);
 DebounceInput motion_detector_a(D7, 50, INPUT, false);
 
-// set up program state in global scope
-ProgramState program_state;
+// For debugging inputs
+long int last_report_millis = 0;
+long int last_analog_read_millis = 0;
+
 
 // cycle_counter for testing purposes
 int cycle_counter = 0;
@@ -47,10 +44,10 @@ void setup() {
   Serial.print("Using PWM resolution of: ");
   Serial.println(PWM_RESOLUTION);
 
-  // set up our PWM LED
-  // This sets up the internal LED PWM controller to connect to pin A0
-  ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
-  ledcAttachPin(LED_PWM_OUTPUT_PIN, PWM_CHANNEL);
+  // // set up our PWM LED
+  // // This sets up the internal LED PWM controller to connect to pin A0
+  // ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
+  // ledcAttachPin(LED_PWM_OUTPUT_PIN, PWM_CHANNEL);
 
 }
 
@@ -89,14 +86,45 @@ void loop() {
   }
   // Do the background task
   set_led(program_state);
+
+
+  // Read the analog inputs
+  // Only run this once every 10 ms
+  long int curr_time = millis();
+  if (curr_time % 10 == 0) {
+    if (curr_time - last_analog_read_millis > 1) {
+      last_analog_read_millis = curr_time;
+      program_state.read_pot_values();
+    }
+  }
+
+  // Write the analog inputs once per second
+  if (curr_time % 1000 == 0) {
+    if (curr_time - last_report_millis > 1) {
+      last_report_millis = curr_time;
+      Serial.print(curr_time);
+      Serial.print(" Red: ");
+      Serial.print(program_state.red_pot_val);
+      Serial.print(", Green: ");
+      Serial.print(program_state.green_pot_val);
+      Serial.print(", Blue: ");
+      Serial.print(program_state.blue_pot_val);
+      Serial.print(", White: ");
+      Serial.print(program_state.white_pot_val);
+      Serial.print(", Motion A: ");
+      Serial.print(program_state.motion_detector_a.update());
+      Serial.print(": ");
+      Serial.print(program_state.motion_detector_a.occupied());
+      Serial.print(", Motion B: ");
+      Serial.print(program_state.motion_detector_b.update());
+      Serial.print(": ");
+      Serial.println(program_state.motion_detector_b.occupied());
+    }
+  }
+
 }
 
 // Define various things
-
-ProgramState::ProgramState() {
-  last_cycle_start = millis();
-  last_motion_detected = millis();
-}
 
 void green_set() {
   digitalWrite(LED_RED, HIGH);

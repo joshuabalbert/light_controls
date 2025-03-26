@@ -18,6 +18,10 @@ DebounceInput::DebounceInput(uint8_t pin, uint16_t debounceDelay, uint8_t inputM
   _currentState = _lastStableState;
 }
 
+DebounceInput::DebounceInput() {
+  // Empty constructor
+}
+
 bool DebounceInput::update() {
   // Read the current physical state of the pin
   bool reading = digitalRead(_pin);

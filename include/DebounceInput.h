@@ -38,6 +38,9 @@ public:
     uint8_t inputMode = INPUT_PULLUP, 
     bool activeLow = true);
   
+  // Empty default constructor
+  DebounceInput();
+  
   /**
    * Update the debounced state
    * Should be called in each loop iteration
