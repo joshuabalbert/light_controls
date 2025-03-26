@@ -16,7 +16,8 @@ enum class Mode {
   CUSTOM_5,
   CUSTOM_6,
   CUSTOM_7,
-  CUSTOM_8
+  CUSTOM_8,
+  INVALID
 };
 
 class ProgramState {
@@ -25,13 +26,16 @@ class ProgramState {
     unsigned int _green_pot_pin;
     unsigned int _blue_pot_pin;
     unsigned int _white_pot_pin;
+    Mode _max_usable_mode;
   public:
     ProgramState(unsigned int red_pot_pin=A1, 
                  unsigned int green_pot_pin=A0, 
                  unsigned int blue_pot_pin=A2, 
-                 unsigned int white_pot_pin=A3);
+                 unsigned int white_pot_pin=A3,
+                 Mode max_usable_mode=Mode::CUSTOM_6);
     unsigned long last_cycle_start;
     unsigned long last_motion_detected;
+    unsigned long last_mode_start;
     unsigned int red_pot_val;
     unsigned int green_pot_val;
     unsigned int blue_pot_val;
@@ -47,6 +51,8 @@ class ProgramState {
     
     Mode update_mode(Mode new_mode);
     bool read_pot_values();
+    bool update_motion_sensors();
+    Mode cycle_mode();
 };
 
 #endif
