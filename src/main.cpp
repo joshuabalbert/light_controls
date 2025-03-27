@@ -97,16 +97,19 @@ void loop() {
   set_led(program_state);
 
 
-  // Read the analog inputs and motion sensors
-  // Only run this once every 10 ms
+  // Read motion sensors
+  // Only run this once per ten milliseconds
   long int curr_time = millis();
   if (curr_time % 10 == 0) {
     if (curr_time - last_analog_read_millis > 1) {
       last_analog_read_millis = curr_time;
-      program_state.read_pot_values();
       program_state.update_motion_sensors();
     }
   }
+
+  // Read the analog inputs
+  program_state.read_pot_values();
+
 
   // Write the analog inputs and some output data once per second
   if (curr_time % 1000 == 0) {

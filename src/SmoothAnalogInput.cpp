@@ -6,20 +6,23 @@ SmoothAnalogInput::SmoothAnalogInput(uint8_t pin,
   uint8_t inputMode,
   uint8_t adc_resolution) 
   : _pin(pin), 
-    _base_long_ema_factor(exp(-1.0 / long_half_life_ms)),
+    _base_long_ema_factor(1 - exp(-1.0 * M_LN2 / long_half_life_ms)), // HL->tau
     _long_ema(0),
-    _short_ema_factor(exp(-1.0 / short_half_life_ms)),
+    _short_ema_factor(1 - exp(-1.0 * M_LN2 / short_half_life_ms)), // HL->tau
     _short_ema(0),
     _last_read(0),
     _last_read_time(0),
     _adc_resolution(adc_resolution),
-    _ordinary_change_wide_sigma(1) {
+    _ordinary_change_wide_sigma(1),
+    _deadband_zero(30),
+    _max_brightness(4000){
 
   // Get the ordinary change wide sigma properly calculated
   // Expect no faster than full-scale per second, so 1/1000 per ms
   _ordinary_change_wide_sigma = (1 << _adc_resolution)/1000.0;
-  Serial.print("DEBUG: Ordinary change wide sigma is ");
-  Serial.println(_ordinary_change_wide_sigma);
+
+  // Calculate max brightness to 90% of full scale
+  _max_brightness = static_cast<uint16_t>((1 << _adc_resolution) * 0.9);
 
   // initialization
   pinMode(_pin, inputMode); // INPUT is default, the pullup is silly here
@@ -39,12 +42,40 @@ bool SmoothAnalogInput::update() {
     _last_read_time = curr_time;
     return false;
   }
+
   uint16_t reading = analogRead(_pin);
+  _last_read_time = curr_time;
 
   // Get correction factor for long-term EMA based on how far
   // we are from the recent readings.
-  double spike_factor = abs((int)reading - (int)_short_ema) / _ordinary_change_wide_sigma;
+  // Serial.print("DEBUG: OCWS, blef, spike factor, adj factor, brightness_rel, reading, ctlrt: ");
+  // We worry more about smoothing when the light is dim, while we want
+  // faster responsiveness when the light is bright.
+  double reading_diff = static_cast<double>(abs((int)reading - (int)_last_read));
+  double spike_factor = reading_diff / _ordinary_change_wide_sigma;
+  double brightness_relaxing = 1.0;
+  // if (reading > 50 * _ordinary_change_wide_sigma) {
+  //   brightness_relaxing = 1 + 0.5 * sqrt(reading - 50 * _ordinary_change_wide_sigma)/_ordinary_change_wide_sigma;
+  // }
+  spike_factor = spike_factor / brightness_relaxing;
+  
+  // Serial.print(_ordinary_change_wide_sigma, 3);
+  // Serial.print(" ");
+  // Serial.print(_base_long_ema_factor, 3);
+  // Serial.print(" ");
+  // Serial.print(spike_factor, 3);
   double long_ema_factor = _base_long_ema_factor * exp(-spike_factor);
+  // double long_ema_factor = _base_long_ema_factor;
+  // Serial.print(" ");
+  // Serial.print(long_ema_factor, 3);
+  // Serial.print(" ");
+  // Serial.print(brightness_relaxing, 3);
+  // Serial.print(" ");
+  // Serial.print(reading);
+  // Serial.print(" ");
+  // Serial.print(curr_time - _last_read_time);
+  // Serial.print(" ");
+  // Serial.println("  xyzabc");
 
   // Update the long-term EMA
   _long_ema = long_ema_factor * reading + (1 - long_ema_factor) * _long_ema;
@@ -58,7 +89,14 @@ bool SmoothAnalogInput::update() {
 }
 
 uint16_t SmoothAnalogInput::get_smoothed_value() const {
-  return (uint16_t)_long_ema;
+  // Give deadband at bottom, max brightness at top
+  if (_long_ema < _deadband_zero) {
+    return static_cast<uint16_t>(0);
+  }
+  if (_long_ema > _max_brightness) {
+    return _max_brightness;
+  }
+  return static_cast<uint16_t>(_long_ema);
 }
 
 uint16_t SmoothAnalogInput::get_raw_value() const {

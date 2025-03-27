@@ -48,6 +48,8 @@ private:
   unsigned long _last_read_time;
   uint8_t _adc_resolution; // Resolution of the ADC, 12-bit for ESP32
   double _ordinary_change_wide_sigma; // Expect ordinary change per ms within this
+  uint16_t _deadband_zero; // Anything below this is zero
+  uint16_t _max_brightness; // Maximum brightness value
 
 public:
   /**
@@ -58,12 +60,11 @@ public:
    * @param short_half_life_ms The half-life of the short-term average in milliseconds
    * @param inputMode INPUT or INPUT_PULLUP (default INPUT)
    * @param adc_resolution The resolution of the ADC (default 12)
+   * 
+   * This is the constructor, it also initializes the pin
+   * We.... could be using the internal pullup resistor but I can't imagine
+   * why we would, the potentiometers should never be floating.
   */
-  // The @param stuff is for Doxygen, which I'm not using, but it doesn't hurt
-
-  // This is the constructor, it also initializes the pin
-  // We.... could be using the internal pullup resistor but I can't imagine
-  // why we would, the potentiometers should never be floating.
   SmoothAnalogInput(
     uint8_t pin, 
     uint16_t long_half_life_ms = 50, 
