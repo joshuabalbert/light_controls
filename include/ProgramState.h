@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "MotionSensorState.h"
+#include "SmoothAnalogInput.h"
 
 enum class Mode {
   OFF,
@@ -40,6 +41,11 @@ class ProgramState {
     unsigned int green_pot_val;
     unsigned int blue_pot_val;
     unsigned int white_pot_val;
+    SmoothAnalogInput red_pot;
+    SmoothAnalogInput green_pot;
+    SmoothAnalogInput blue_pot;
+    SmoothAnalogInput white_pot;
+    
 
     // Mode data
     Mode curr_mode;

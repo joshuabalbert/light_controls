@@ -20,11 +20,11 @@ ProgramState::ProgramState(unsigned int red_pot_pin,
   _max_usable_mode = max_usable_mode;
 
 
-  // initialize pin modes
-  pinMode(_red_pot_pin, INPUT);
-  pinMode(_green_pot_pin, INPUT);
-  pinMode(_blue_pot_pin, INPUT);
-  pinMode(_white_pot_pin, INPUT);
+  // initialize pins
+  red_pot = SmoothAnalogInput(_red_pot_pin);
+  green_pot = SmoothAnalogInput(_green_pot_pin);
+  blue_pot = SmoothAnalogInput(_blue_pot_pin);
+  white_pot = SmoothAnalogInput(_white_pot_pin);
 
   // initialize logic mode
   curr_mode = Mode::OFF;
@@ -38,10 +38,10 @@ ProgramState::ProgramState(unsigned int red_pot_pin,
 }
 
 bool ProgramState::read_pot_values() {
-  red_pot_val = analogRead(_red_pot_pin);
-  green_pot_val = analogRead(_green_pot_pin);
-  blue_pot_val = analogRead(_blue_pot_pin);
-  white_pot_val = analogRead(_white_pot_pin);
+  red_pot_val = red_pot.update_and_get_smoothed();
+  green_pot_val = green_pot.update_and_get_smoothed();
+  blue_pot_val = blue_pot.update_and_get_smoothed();
+  white_pot_val = white_pot.update_and_get_smoothed();
   return true;
 }
 
