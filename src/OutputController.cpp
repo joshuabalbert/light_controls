@@ -7,10 +7,18 @@ Control the lights and the program logic!
 
 OutputController::OutputController(unsigned int red_output_pwm_pin, 
                                    unsigned int green_output_pwm_pin, 
-                                   unsigned int blue_output_pwm_pin) {
+                                   unsigned int blue_output_pwm_pin,
+                                   unsigned long rainbow_duration) {
   _red_output_pwm_pin = red_output_pwm_pin;
   _green_output_pwm_pin = green_output_pwm_pin;
   _blue_output_pwm_pin = blue_output_pwm_pin;
+  _rainbow_duration = rainbow_duration;
+  _last_jingle_time = 0;
+  _jingle_duration = 0;
+  _jingle_color_1 = JingleColors::OFF;
+  _jingle_color_2 = JingleColors::OFF;
+  _jingle_color_3 = JingleColors::OFF;
+  _rainbow_start_time = 0;
 
   // initialize PWM pins and parameters
   const int pwm_freq = 5000;
@@ -157,10 +165,13 @@ void OutputController::enter_mode(ProgramState &state) {
       break;
     case Mode::CUSTOM_7:
       // Set the lights to custom 7
+      // BEGIN THE SECRET RAINBOW!!!
       Serial.println("Setting custom 7");
-      ledcWrite(_red_pwm_channel, 100);
+      ledcWrite(_red_pwm_channel, 3000);
       ledcWrite(_green_pwm_channel, 0);
       ledcWrite(_blue_pwm_channel, 0);
+      _rainbow_start_time = millis();
+      run_color_jingle(JingleColors::MAGENTA, JingleColors::CYAN, JingleColors::YELLOW);
       break;
     case Mode::CUSTOM_8:
       // Set the lights to custom 8
@@ -250,7 +261,9 @@ void OutputController::process_mode(ProgramState &state) {
       // Set the lights to custom 6
       break;
     case Mode::CUSTOM_7:
-      // Set the lights to custom 7
+      // Secret rainbow functionality!!
+      set_rainbow(curr_time - _rainbow_start_time);
+
       break;
     case Mode::CUSTOM_8:
       // Set the lights to custom 8
@@ -259,4 +272,43 @@ void OutputController::process_mode(ProgramState &state) {
       // Set the lights to invalid
       break;
   }
+}
+
+void OutputController::set_rainbow(unsigned long time_diff, uint16_t max_brightness) {
+  /*
+  Set the lights to a rainbow pattern.
+  This is a simple function to set the lights to a rainbow pattern.
+  */
+  time_diff = time_diff % _rainbow_duration;
+  // Set the colors
+  int red = 0;
+  int green = 0;
+  int blue = 0;
+  // Start at full red, moving towards green
+  if (time_diff < _rainbow_duration/3){
+    // Set the colors
+    red = max_brightness - (max_brightness * time_diff / (_rainbow_duration/3));
+    green = max_brightness * time_diff / (_rainbow_duration/3);
+    blue = 0;
+    }
+  // Then move towards blue
+  else if (time_diff < 2 * _rainbow_duration/3){
+    // Set the colors
+    red = 0;
+    green = max_brightness - (max_brightness * (time_diff - _rainbow_duration/3) / (_rainbow_duration/3));
+    blue = max_brightness * (time_diff - _rainbow_duration/3) / (_rainbow_duration/3);
+  }
+  // Finally move back to red
+  else {
+    // Set the colors
+    red = max_brightness * (time_diff - 2 * _rainbow_duration/3) / (_rainbow_duration/3);
+    green = 0;
+    blue = max_brightness - (max_brightness * (time_diff - 2 * _rainbow_duration/3) / (_rainbow_duration/3));
+  }
+
+
+  // Set the colors
+  ledcWrite(_red_pwm_channel, red);
+  ledcWrite(_green_pwm_channel, green);
+  ledcWrite(_blue_pwm_channel, blue);
 }

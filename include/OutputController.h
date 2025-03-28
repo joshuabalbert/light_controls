@@ -29,15 +29,19 @@ class OutputController {
     JingleColors _jingle_color_1;
     JingleColors _jingle_color_2;
     JingleColors _jingle_color_3;
+    unsigned long _rainbow_duration;
+    unsigned long _rainbow_start_time;
   public:
     OutputController(unsigned int red_output_pwm_pin=D3, 
                      unsigned int green_output_pwm_pin=D4, 
-                     unsigned int blue_output_pwm_pin=D2);
+                     unsigned int blue_output_pwm_pin=D2,
+                     unsigned long rainbow_duration=20000);
     
     void enter_mode(ProgramState &state);
     void process_mode(ProgramState &state);
     void run_color_jingle(JingleColors color1, JingleColors color2, 
       JingleColors color3, int duration_ms = 1500);
+    void set_rainbow(unsigned long time_diff, uint16_t max_brightness = 3000);
 };
 
 #endif
