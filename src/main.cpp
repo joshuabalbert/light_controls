@@ -64,7 +64,10 @@ void loop() {
   // We're only going to consider the last activation of the iteration
   // If two buttons are pressed at exactly the same time, we'll only consider the last one
   // Later on, we may add in functionality for multiple buttons pressed at once
+  // Okay, fine, here's one: if multiple of the special buttons are pressed at once, we'll go
+  // to special mode with rainbows...
   bool mode_updated = false;
+  bool special_button_pressed = false;
 
   // CYCLE BUTTON
   if (button_cycle.update()) {
@@ -131,6 +134,7 @@ void loop() {
     // If the state changed, print it
     if (button_s1.isActive()) {
       Serial.println("S1 button pressed!");
+      special_button_pressed = true;
       program_state.update_mode(Mode::CUSTOM_1);
       mode_updated = true;
     } else {
@@ -143,6 +147,7 @@ void loop() {
     // If the state changed, print it
     if (button_s2.isActive()) {
       Serial.println("S2 button pressed!");
+      special_button_pressed = true;
       program_state.update_mode(Mode::CUSTOM_2);
       mode_updated = true;
     } else {
@@ -156,6 +161,7 @@ void loop() {
     // If the state changed, print it
     if (button_s3.isActive()) {
       Serial.println("S3 button pressed!");
+      special_button_pressed = true;
       program_state.update_mode(Mode::CUSTOM_3);
       mode_updated = true;
     } else {
@@ -168,10 +174,28 @@ void loop() {
     // If the state changed, print it
     if (button_s4.isActive()) {
       Serial.println("S4 button pressed!");
+      special_button_pressed = true;
       program_state.update_mode(Mode::CUSTOM_4);
       mode_updated = true;
     } else {
       Serial.println("S4 button released!");
+    }
+  }
+
+  // Do we go to special secret mode?
+  if (special_button_pressed) {
+    // count how many special buttons are active
+    int special_button_count = 0;
+    if (button_s1.isActive()) special_button_count++;
+    if (button_s2.isActive()) special_button_count++;
+    if (button_s3.isActive()) special_button_count++;
+    if (button_s4.isActive()) special_button_count++;
+
+    // If we have more than one special button pressed, go to special mode
+    if (special_button_count > 1) {
+      Serial.println("Going to special mode!");
+      program_state.update_mode(Mode::CUSTOM_7);
+      mode_updated = true;
     }
   }
 
