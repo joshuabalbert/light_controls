@@ -155,20 +155,7 @@ void OutputController::process_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, state.red_pot_val);
       ledcWrite(_green_pwm_channel, state.green_pot_val);
       ledcWrite(_blue_pwm_channel, state.blue_pot_val);
-      // if (state.red_pot_val > 1 || state.green_pot_val > 1 || state.blue_pot_val > 1) {
-      //   Serial.print("Setting RGB TO ");
-      //   Serial.print(state.red_pot_val);
-      //   Serial.print(", ");
-      //   Serial.print(state.green_pot_val);
-      //   Serial.print(", ");
-      //   Serial.print(state.blue_pot_val);
-      //   Serial.print(" to channels ");
-      //   Serial.print(_red_pwm_channel);
-      //   Serial.print(", ");
-      //   Serial.print(_green_pwm_channel);
-      //   Serial.print(", ");
-      //   Serial.println(_blue_pwm_channel);
-      // }
+
       break;
     case Mode::WHITE:
       // Set the lights to white

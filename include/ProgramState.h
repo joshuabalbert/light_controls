@@ -45,6 +45,11 @@ class ProgramState {
     SmoothAnalogInput green_pot;
     SmoothAnalogInput blue_pot;
     SmoothAnalogInput white_pot;
+
+    // Sleep things
+    unsigned long last_motion_detected_time;
+    unsigned long wake_to_doze_time;
+    unsigned long doze_to_sleep_time;
     
 
     // Mode data
@@ -59,6 +64,13 @@ class ProgramState {
     bool read_pot_values();
     bool update_motion_sensors();
     Mode cycle_mode();
+
+    /**
+     * * Handle sleep mode
+     * 
+     * * @return true if mode was changed
+     */
+    bool handle_sleep();
 };
 
 #endif

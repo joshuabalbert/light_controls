@@ -26,6 +26,10 @@ ProgramState::ProgramState(unsigned int red_pot_pin,
   blue_pot = SmoothAnalogInput(_blue_pot_pin);
   white_pot = SmoothAnalogInput(_white_pot_pin);
 
+  // sleep things
+  wake_to_doze_time = 10000; // 10 seconds
+  doze_to_sleep_time = 5000; // 5 seconds past doze
+
   // initialize logic mode
   curr_mode = Mode::OFF;
   last_mode = Mode::OFF;
@@ -79,4 +83,35 @@ Mode ProgramState::cycle_mode() {
   Serial.println(static_cast<int>(new_mode));
 
   return update_mode(new_mode);
+}
+
+bool ProgramState::handle_sleep() {
+  unsigned long curr_time = millis();
+  // If we haven't seen motion in a while, prepare for sleep
+  bool in_motion_a = motion_detector_a.occupied();
+  bool in_motion_b = motion_detector_b.occupied();
+  bool in_motion_c = motion_detector_c.occupied();
+  if (in_motion_a || in_motion_b || in_motion_c) {
+    last_motion_detected = curr_time;
+  }
+  if (curr_mode != Mode::SLEEP_PREP) {
+    if (curr_time - last_motion_detected > wake_to_doze_time) {
+      update_mode(Mode::SLEEP_PREP);
+      return true;
+    }
+  }
+  // If we are in SLEEP_PREP, check if we should go to sleep
+  if (curr_mode == Mode::SLEEP_PREP) {
+    if (curr_time - last_motion_detected > doze_to_sleep_time + wake_to_doze_time) {
+      // Go to sleep for good now!
+      update_mode(Mode::OFF);
+      return true;
+    }
+    if (in_motion_a || in_motion_b || in_motion_c) {
+      // Go back to the last mode
+      update_mode(last_mode);
+      return true;
+    }
+  }
+  return false;
 }

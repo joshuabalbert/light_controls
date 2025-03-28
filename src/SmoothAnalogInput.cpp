@@ -43,39 +43,30 @@ bool SmoothAnalogInput::update() {
     return false;
   }
 
+  unsigned long time_since_last_read = curr_time - _last_read_time;
+
   uint16_t reading = analogRead(_pin);
   _last_read_time = curr_time;
 
   // Get correction factor for long-term EMA based on how far
   // we are from the recent readings.
-  // Serial.print("DEBUG: OCWS, blef, spike factor, adj factor, brightness_rel, reading, ctlrt: ");
   // We worry more about smoothing when the light is dim, while we want
   // faster responsiveness when the light is bright.
   double reading_diff = static_cast<double>(abs((int)reading - (int)_last_read));
   double spike_factor = reading_diff / _ordinary_change_wide_sigma;
   double brightness_relaxing = 1.0;
-  // if (reading > 50 * _ordinary_change_wide_sigma) {
-  //   brightness_relaxing = 1 + 0.5 * sqrt(reading - 50 * _ordinary_change_wide_sigma)/_ordinary_change_wide_sigma;
-  // }
+  if (reading > 50 * _ordinary_change_wide_sigma) {
+    brightness_relaxing = 1 + 0.5 * sqrt(reading - 50 * _ordinary_change_wide_sigma)/_ordinary_change_wide_sigma;
+  }
   spike_factor = spike_factor / brightness_relaxing;
   
-  // Serial.print(_ordinary_change_wide_sigma, 3);
-  // Serial.print(" ");
-  // Serial.print(_base_long_ema_factor, 3);
-  // Serial.print(" ");
-  // Serial.print(spike_factor, 3);
   double long_ema_factor = _base_long_ema_factor * exp(-spike_factor);
-  // double long_ema_factor = _base_long_ema_factor;
-  // Serial.print(" ");
-  // Serial.print(long_ema_factor, 3);
-  // Serial.print(" ");
-  // Serial.print(brightness_relaxing, 3);
-  // Serial.print(" ");
-  // Serial.print(reading);
-  // Serial.print(" ");
-  // Serial.print(curr_time - _last_read_time);
-  // Serial.print(" ");
-  // Serial.println("  xyzabc");
+
+  // if we're having problems with not making it every millisecond, we can increase the
+  // influence of this reading so we can try to keep the 50ms half-life
+  if (time_since_last_read > 1) {
+    long_ema_factor *= constrain(0.95 * time_since_last_read, 1, 10);
+  }
 
   // Update the long-term EMA
   _long_ema = long_ema_factor * reading + (1 - long_ema_factor) * _long_ema;

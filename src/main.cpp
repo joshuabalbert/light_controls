@@ -86,6 +86,24 @@ void loop() {
     }
   }
 
+  // Do the background task
+  set_led(program_state);
+
+
+  // Read motion sensors, handle sleep decision
+  // Only run this once per ten milliseconds
+  long int curr_time = millis();
+  if (curr_time % 10 == 0) {
+    if (curr_time - last_analog_read_millis > 1) {
+      last_analog_read_millis = curr_time;  
+      // Check for sleep stuff, this also updates the motion sensors
+      mode_updated = program_state.handle_sleep() || mode_updated;
+    }
+  }
+
+  // Read the analog inputs
+  program_state.read_pot_values();
+
   // Handle the logic
   if (mode_updated) {
     output_controller.enter_mode(program_state);
@@ -93,25 +111,8 @@ void loop() {
   output_controller.process_mode(program_state);
 
 
-  // Do the background task
-  set_led(program_state);
-
-
-  // Read motion sensors
-  // Only run this once per ten milliseconds
-  long int curr_time = millis();
-  if (curr_time % 10 == 0) {
-    if (curr_time - last_analog_read_millis > 1) {
-      last_analog_read_millis = curr_time;
-      program_state.update_motion_sensors();
-    }
-  }
-
-  // Read the analog inputs
-  program_state.read_pot_values();
-
-
   // Write the analog inputs and some output data once per second
+  // This is for debugging
   if (curr_time % 1000 == 0) {
     if (curr_time - last_report_millis > 1) {
       last_report_millis = curr_time;
@@ -132,8 +133,10 @@ void loop() {
       Serial.print(program_state.motion_detector_b.update());
       Serial.print(": ");
       Serial.println(program_state.motion_detector_b.occupied());
-      Serial.print("Current mode: ");
-      Serial.println(static_cast<int>(program_state.curr_mode));
+      Serial.print("Current, last mode: ");
+      Serial.print(static_cast<int>(program_state.curr_mode));
+      Serial.print(", ");
+      Serial.println(static_cast<int>(program_state.last_mode));
     }
   }
 
