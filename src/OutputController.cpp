@@ -30,6 +30,28 @@ OutputController::OutputController(unsigned int red_output_pwm_pin,
   ledcAttachPin(_blue_output_pwm_pin, _blue_pwm_channel);
 }
 
+void OutputController::run_color_jingle(JingleColors color1, JingleColors color2, 
+                                         JingleColors color3, int duration_ms) {
+  /*
+  Run a jingle of colors for a given duration.
+  This is a simple function to run a jingle of colors.
+  */
+
+  // Set the colors
+  _jingle_color_1 = color1;
+  _jingle_color_2 = color2;
+  _jingle_color_3 = color3;
+
+  // Set the duration
+  _jingle_duration = duration_ms;
+
+  // Set the last jingle time
+  _last_jingle_time = millis();
+
+  Serial.print("Jingle stop time: ");
+  Serial.println(_last_jingle_time + _jingle_duration);
+}
+
 void OutputController::enter_mode(ProgramState &state) {
   /*
   Take actions appropriate for when we enter a new mode.
@@ -45,12 +67,14 @@ void OutputController::enter_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, 0);
       ledcWrite(_green_pwm_channel, 0);
       ledcWrite(_blue_pwm_channel, 0);
+      run_color_jingle(JingleColors::WHITE, JingleColors::WHITE, JingleColors::OFF);
       break;
     case Mode::SLEEP_PREP:
       // Turn off all the lights
       ledcWrite(_red_pwm_channel, 0);
       ledcWrite(_green_pwm_channel, 0);
       ledcWrite(_blue_pwm_channel, 0);
+      run_color_jingle(JingleColors::WHITE, JingleColors::OFF, JingleColors::OFF);
       break;
     case Mode::RGB:
       // Set the lights to the RGB values
@@ -58,6 +82,7 @@ void OutputController::enter_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, state.red_pot_val);
       ledcWrite(_green_pwm_channel, state.green_pot_val);
       ledcWrite(_blue_pwm_channel, state.blue_pot_val);
+      run_color_jingle(JingleColors::RED, JingleColors::GREEN, JingleColors::BLUE);
       Serial.print("Setting RGB maybe TO ");
       Serial.print(state.red_pot_val);
       Serial.print(", ");
@@ -70,13 +95,13 @@ void OutputController::enter_mode(ProgramState &state) {
       Serial.print(_green_pwm_channel);
       Serial.print(", ");
       Serial.println(_blue_pwm_channel);
-
       break;
     case Mode::WHITE:
       // Set the lights to white
       ledcWrite(_red_pwm_channel, state.white_pot_val);
       ledcWrite(_green_pwm_channel, state.white_pot_val);
       ledcWrite(_blue_pwm_channel, state.white_pot_val);
+      run_color_jingle(JingleColors::WHITE, JingleColors::OFF, JingleColors::WHITE);
       break;
     case Mode::CUSTOM_1:
       // Set the lights to custom 1
@@ -88,6 +113,7 @@ void OutputController::enter_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, 400);
       ledcWrite(_green_pwm_channel, 0);
       ledcWrite(_blue_pwm_channel, 0);
+      run_color_jingle(JingleColors::RED, JingleColors::OFF, JingleColors::RED);
       break;
     case Mode::CUSTOM_2:
       // Set the lights to custom 2
@@ -95,6 +121,7 @@ void OutputController::enter_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, 0);
       ledcWrite(_green_pwm_channel, 400);
       ledcWrite(_blue_pwm_channel, 0);
+      run_color_jingle(JingleColors::GREEN, JingleColors::OFF, JingleColors::GREEN);
       break;
     case Mode::CUSTOM_3:
       // Set the lights to custom 3
@@ -102,6 +129,7 @@ void OutputController::enter_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, 0);
       ledcWrite(_green_pwm_channel, 0);
       ledcWrite(_blue_pwm_channel, 400);
+      run_color_jingle(JingleColors::BLUE, JingleColors::OFF, JingleColors::BLUE);
       break;
     case Mode::CUSTOM_4:
       // Set the lights to custom 4
@@ -109,6 +137,7 @@ void OutputController::enter_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, 400);
       ledcWrite(_green_pwm_channel, 400);
       ledcWrite(_blue_pwm_channel, 0);
+      run_color_jingle(JingleColors::YELLOW, JingleColors::OFF, JingleColors::YELLOW);
       break;
     case Mode::CUSTOM_5:
       // Set the lights to custom 5
@@ -116,6 +145,7 @@ void OutputController::enter_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, 0);
       ledcWrite(_green_pwm_channel, 400);
       ledcWrite(_blue_pwm_channel, 400);
+      run_color_jingle(JingleColors::CYAN, JingleColors::OFF, JingleColors::CYAN);
       break;
     case Mode::CUSTOM_6:
       // Set the lights to custom 6
@@ -123,6 +153,7 @@ void OutputController::enter_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, 400);
       ledcWrite(_green_pwm_channel, 0);
       ledcWrite(_blue_pwm_channel, 400);
+      run_color_jingle(JingleColors::MAGENTA, JingleColors::OFF, JingleColors::MAGENTA);
       break;
     case Mode::CUSTOM_7:
       // Set the lights to custom 7
@@ -149,6 +180,36 @@ void OutputController::process_mode(ProgramState &state) {
   Take actions appropriate for the current mode.
   This should be called in the main loop.
   */
+
+  // Regardless of mode, check if we're in the jingle!
+  // Also, check if we're just after it, to turn it off
+  unsigned long curr_time = millis();
+  if (curr_time - _last_jingle_time < _jingle_duration + 100) {
+    // We're in the jingle, set the lights to the jingle colors
+    JingleColors curr_color = JingleColors::OFF;
+    if (curr_time - _last_jingle_time < _jingle_duration / 3) {
+      curr_color = _jingle_color_1;
+    } else if (curr_time - _last_jingle_time < 2 * _jingle_duration / 3) {
+      curr_color = _jingle_color_2;
+    } else if (curr_time - _last_jingle_time < _jingle_duration) {
+      curr_color = _jingle_color_3;
+    }
+    if (static_cast<unsigned int>(curr_color) & static_cast<unsigned int>(JingleColors::RED)) {
+      digitalWrite(LED_RED, LOW);
+    } else {
+      digitalWrite(LED_RED, HIGH);
+    }
+    if (static_cast<unsigned int>(curr_color) & static_cast<unsigned int>(JingleColors::GREEN)) {
+      digitalWrite(LED_GREEN, LOW);
+    } else {
+      digitalWrite(LED_GREEN, HIGH);
+    }
+    if (static_cast<unsigned int>(curr_color) & static_cast<unsigned int>(JingleColors::BLUE)) {
+      digitalWrite(LED_BLUE, LOW);
+    } else {
+      digitalWrite(LED_BLUE, HIGH);
+    }
+  }
 
   switch(state.curr_mode) {
     case Mode::OFF:

@@ -94,9 +94,10 @@ bool ProgramState::handle_sleep() {
   if (in_motion_a || in_motion_b || in_motion_c) {
     last_motion_detected = curr_time;
   }
-  if (curr_mode != Mode::SLEEP_PREP) {
+  if (curr_mode != Mode::SLEEP_PREP && curr_mode != Mode::OFF) {
     if (curr_time - last_motion_detected > wake_to_doze_time) {
       update_mode(Mode::SLEEP_PREP);
+      Serial.println("Going to sleep prep mode");
       return true;
     }
   }
@@ -105,6 +106,7 @@ bool ProgramState::handle_sleep() {
     if (curr_time - last_motion_detected > doze_to_sleep_time + wake_to_doze_time) {
       // Go to sleep for good now!
       update_mode(Mode::OFF);
+      Serial.println("Going to sleep mode from sleep prep");
       return true;
     }
     if (in_motion_a || in_motion_b || in_motion_c) {
