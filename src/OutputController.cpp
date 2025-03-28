@@ -85,7 +85,7 @@ void OutputController::enter_mode(ProgramState &state) {
       Serial.println(_red_pwm_channel);
       Serial.println(_green_pwm_channel);
       Serial.println(_blue_pwm_channel);
-      ledcWrite(_red_pwm_channel, 40);
+      ledcWrite(_red_pwm_channel, 400);
       ledcWrite(_green_pwm_channel, 0);
       ledcWrite(_blue_pwm_channel, 0);
       break;
@@ -93,7 +93,7 @@ void OutputController::enter_mode(ProgramState &state) {
       // Set the lights to custom 2
       Serial.println("Setting custom 2");
       ledcWrite(_red_pwm_channel, 0);
-      ledcWrite(_green_pwm_channel, 40);
+      ledcWrite(_green_pwm_channel, 400);
       ledcWrite(_blue_pwm_channel, 0);
       break;
     case Mode::CUSTOM_3:
@@ -101,13 +101,13 @@ void OutputController::enter_mode(ProgramState &state) {
       Serial.println("Setting custom 3");
       ledcWrite(_red_pwm_channel, 0);
       ledcWrite(_green_pwm_channel, 0);
-      ledcWrite(_blue_pwm_channel, 40);
+      ledcWrite(_blue_pwm_channel, 400);
       break;
     case Mode::CUSTOM_4:
       // Set the lights to custom 4
       Serial.println("Setting custom 4");
-      ledcWrite(_red_pwm_channel, 40);
-      ledcWrite(_green_pwm_channel, 40);
+      ledcWrite(_red_pwm_channel, 400);
+      ledcWrite(_green_pwm_channel, 400);
       ledcWrite(_blue_pwm_channel, 0);
       break;
     case Mode::CUSTOM_5:
@@ -126,9 +126,17 @@ void OutputController::enter_mode(ProgramState &state) {
       break;
     case Mode::CUSTOM_7:
       // Set the lights to custom 7
+      Serial.println("Setting custom 7");
+      ledcWrite(_red_pwm_channel, 100);
+      ledcWrite(_green_pwm_channel, 0);
+      ledcWrite(_blue_pwm_channel, 0);
       break;
     case Mode::CUSTOM_8:
       // Set the lights to custom 8
+      Serial.println("Setting custom 8");
+      ledcWrite(_red_pwm_channel, 0);
+      ledcWrite(_green_pwm_channel, 100);
+      ledcWrite(_blue_pwm_channel, 100);
       break;
     case Mode::INVALID:
       // Set the lights to invalid
@@ -155,7 +163,6 @@ void OutputController::process_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, state.red_pot_val);
       ledcWrite(_green_pwm_channel, state.green_pot_val);
       ledcWrite(_blue_pwm_channel, state.blue_pot_val);
-
       break;
     case Mode::WHITE:
       // Set the lights to white

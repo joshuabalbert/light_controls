@@ -1,13 +1,15 @@
 #include "DebounceInput.h"
 
-DebounceInput::DebounceInput(uint8_t pin, uint16_t debounceDelay, uint8_t inputMode, bool activeLow) 
+DebounceInput::DebounceInput(uint8_t pin, const char* buttonName, 
+  uint16_t debounceDelay, uint8_t inputMode, bool activeLow) 
   : _pin(pin), 
     _debounceDelay(debounceDelay),
     _lastStableState(false),
     _currentState(false),
     _lastDebounceTime(0),
     _mode(inputMode),
-    _activeLow(activeLow) {
+    _activeLow(activeLow),
+    _buttonName(buttonName){
 
   // initialization
   pinMode(_pin, _mode); // INPUT_PULLUP is default, keep that in mind!
@@ -16,6 +18,8 @@ DebounceInput::DebounceInput(uint8_t pin, uint16_t debounceDelay, uint8_t inputM
     _lastStableState = !_lastStableState;
   }
   _currentState = _lastStableState;
+
+  // 
 }
 
 DebounceInput::DebounceInput() {

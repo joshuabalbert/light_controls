@@ -18,6 +18,9 @@ private:
   unsigned long _lastDebounceTime;
   uint8_t _mode;
   bool _activeLow;  // some inputs are "activated" when they input is low
+  
+  // Button function stuff
+  const char* _buttonName;    // Button name for debugging
 
 public:
   /**
@@ -27,19 +30,24 @@ public:
    * @param debounceDelay Debounce time in milliseconds (default 50ms)
    * @param inputMode INPUT or INPUT_PULLUP (default INPUT_PULLUP)
    * @param activeLow Whether a LOW reading means active/pressed (default true)
+   * @param buttonName Name of the button
    */
   // The @param stuff is for Doxygen, which I'm not using, but it doesn't hurt
 
   // This is the constructor, it also initializes the pin
   // We're using the internal pullup resistors to make things easier
   DebounceInput(
-    uint8_t pin, 
+    uint8_t pin,
+    const char* buttonName = "Button",
     uint16_t debounceDelay = 50, 
     uint8_t inputMode = INPUT_PULLUP, 
     bool activeLow = true);
   
   // Empty default constructor
   DebounceInput();
+
+  // Things for when the button is called
+
   
   /**
    * Update the debounced state
@@ -55,6 +63,9 @@ public:
    * @return true if button is pressed/active (with debouncing considered)
    */
   bool isActive() const;
+
+  // Get the button name
+  const char* getButtonName() const;
   
 };
 

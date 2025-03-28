@@ -19,10 +19,17 @@ OutputController output_controller;
 
 // Declare a function to set the LED
 void set_led(ProgramState &state);
+void led_debug_heartbeat(ProgramState &state);
 
 // set up digital input pins
-DebounceInput button_a(D6);
-DebounceInput button_cycle(D7);
+DebounceInput button_rgb(D12, "rgb");
+DebounceInput button_white(D11, "white");
+DebounceInput button_cycle(D10, "cycle");
+DebounceInput button_off(D9, "off");
+DebounceInput button_s1(D8, "s1");
+DebounceInput button_s2(D7, "s2");
+DebounceInput button_s3(D6, "s3");
+DebounceInput button_s4(D5, "s4");
 
 // For debugging inputs
 long int last_report_millis = 0;
@@ -52,13 +59,23 @@ void loop() {
   // put your main code here, to run repeatedly:
   cycle_counter++;
   // Update the input states
-  if (button_a.update()) {
+
+  // Check all the buttons here!!
+  // We're only going to consider the last activation of the iteration
+  // If two buttons are pressed at exactly the same time, we'll only consider the last one
+  // Later on, we may add in functionality for multiple buttons pressed at once
+  bool mode_updated = false;
+
+  // CYCLE BUTTON
+  if (button_cycle.update()) {
     // If the state changed, print it
-    if (button_a.isActive()) {
-      Serial.println("Button pressed!");
+    if (button_cycle.isActive()) {
+      Serial.println("Cycle button pressed!");
       press_counter++;
+      program_state.cycle_mode();
+      mode_updated = true;
     } else {
-      Serial.println("Button released!");
+      Serial.println("Cycle button released!");
     }
     // Print the counting info
     Serial.print("Cycle count, millis: ");
@@ -73,21 +90,94 @@ void loop() {
     cycle_counter = 0;
   }
 
-  // Check all the buttons here!!
-  bool mode_updated = false;
-  if (button_cycle.update()) {
+  // OFF BUTTON
+  if (button_off.update()) {
     // If the state changed, print it
-    if (button_cycle.isActive()) {
-      Serial.println("Cycle button pressed!");
-      program_state.cycle_mode();
+    if (button_off.isActive()) {
+      Serial.println("Off button pressed!");
+      program_state.update_mode(Mode::OFF);
       mode_updated = true;
     } else {
-      Serial.println("Cycle button released!");
+      Serial.println("Off button released!");
+    }
+  }
+
+  // WHITE BUTTON
+  if (button_white.update()) {
+    // If the state changed, print it
+    if (button_white.isActive()) {
+      Serial.println("White button pressed!");
+      program_state.update_mode(Mode::WHITE);
+      mode_updated = true;
+    } else {
+      Serial.println("White button released!");
+    }
+  }
+
+  // RGB BUTTON
+  if (button_rgb.update()) {
+    // If the state changed, print it
+    if (button_rgb.isActive()) {
+      Serial.println("RGB button pressed!");
+      program_state.update_mode(Mode::RGB);
+      mode_updated = true;
+    } else {
+      Serial.println("RGB button released!");
+    }
+  }
+
+  // S1 BUTTON
+  if (button_s1.update()) {
+    // If the state changed, print it
+    if (button_s1.isActive()) {
+      Serial.println("S1 button pressed!");
+      program_state.update_mode(Mode::CUSTOM_1);
+      mode_updated = true;
+    } else {
+      Serial.println("S1 button released!");
+    }
+  }
+
+  // S2 BUTTON
+  if (button_s2.update()) {
+    // If the state changed, print it
+    if (button_s2.isActive()) {
+      Serial.println("S2 button pressed!");
+      program_state.update_mode(Mode::CUSTOM_2);
+      mode_updated = true;
+    } else {
+      Serial.println("S2 button released!");
+    }
+  }
+
+  // S3 BUTTON
+
+  if (button_s3.update()) {
+    // If the state changed, print it
+    if (button_s3.isActive()) {
+      Serial.println("S3 button pressed!");
+      program_state.update_mode(Mode::CUSTOM_3);
+      mode_updated = true;
+    } else {
+      Serial.println("S3 button released!");
+    }
+  }
+
+  // S4 BUTTON
+  if (button_s4.update()) {
+    // If the state changed, print it
+    if (button_s4.isActive()) {
+      Serial.println("S4 button pressed!");
+      program_state.update_mode(Mode::CUSTOM_4);
+      mode_updated = true;
+    } else {
+      Serial.println("S4 button released!");
     }
   }
 
   // Do the background task
-  set_led(program_state);
+  // set_led(program_state);
+  led_debug_heartbeat(program_state);
 
 
   // Read motion sensors, handle sleep decision
@@ -197,5 +287,28 @@ void set_led(ProgramState &state) {
     Serial.print("Cycle complete at millis: ");
     Serial.println(millis());
     Serial.println(state.last_cycle_start);
+  }
+}
+
+void led_debug_heartbeat(ProgramState &state) {
+  if (millis() - state.last_cycle_start < 0) {
+    // This might happen in the case of rollover,
+    // reset the last_cycle_start to zero, then
+    state.last_cycle_start = 0;
+  }
+  if (millis() - state.last_cycle_start < 1000) {
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  else if (millis() - state.last_cycle_start < 2000) {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+  else if (millis() - state.last_cycle_start < 3000) {
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  else if (millis() - state.last_cycle_start < 4000) {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+  else {
+    state.last_cycle_start = millis();
   }
 }

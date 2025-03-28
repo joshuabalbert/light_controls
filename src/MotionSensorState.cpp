@@ -11,7 +11,7 @@ MotionSensorState::MotionSensorState(unsigned int motion_pin, bool enabled) {
   _last_motion_detected = 0;
   _cooldown_time = 4000;
   // intialize the pin
-  _motion_input = DebounceInput(motion_pin, 20, INPUT, false);
+  _motion_input = DebounceInput(motion_pin, "motion", 20, INPUT, false);
   _enabled = enabled;
 }
 
@@ -21,7 +21,7 @@ MotionSensorState::MotionSensorState() {
   _last_motion_detected = 0;
   _cooldown_time = 4000;
   _enabled = false;
-  _motion_input = DebounceInput(0, 20, INPUT, false);
+  _motion_input = DebounceInput(0, "motion", 20, INPUT, false);
 }
 
 bool MotionSensorState::update() {
