@@ -29,8 +29,8 @@ class ProgramState {
     unsigned int _white_pot_pin;
     Mode _max_usable_mode;
   public:
-    ProgramState(unsigned int red_pot_pin=A1, 
-                 unsigned int green_pot_pin=A0, 
+    ProgramState(unsigned int red_pot_pin=A0, 
+                 unsigned int green_pot_pin=A1, 
                  unsigned int blue_pot_pin=A2, 
                  unsigned int white_pot_pin=A3,
                  Mode max_usable_mode=Mode::CUSTOM_6);
@@ -64,6 +64,7 @@ class ProgramState {
     bool read_pot_values();
     bool update_motion_sensors();
     Mode cycle_mode();
+    void manual_motion_update();
 
     /**
      * * Handle sleep mode

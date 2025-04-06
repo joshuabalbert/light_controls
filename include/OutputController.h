@@ -33,8 +33,8 @@ class OutputController {
     unsigned long _rainbow_start_time;
   public:
     OutputController(unsigned int red_output_pwm_pin=D3, 
-                     unsigned int green_output_pwm_pin=D4, 
-                     unsigned int blue_output_pwm_pin=D2,
+                     unsigned int green_output_pwm_pin=D2, 
+                     unsigned int blue_output_pwm_pin=D4,
                      unsigned long rainbow_duration=20000);
     
     void enter_mode(ProgramState &state);

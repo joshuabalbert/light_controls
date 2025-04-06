@@ -24,12 +24,12 @@ void led_debug_heartbeat(ProgramState &state);
 // set up digital input pins
 DebounceInput button_rgb(D12, "rgb");
 DebounceInput button_white(D11, "white");
-DebounceInput button_cycle(D10, "cycle");
-DebounceInput button_off(D9, "off");
+DebounceInput button_cycle(D9, "cycle");
+DebounceInput button_off(D10, "off");
 DebounceInput button_s1(D8, "s1");
 DebounceInput button_s2(D7, "s2");
-DebounceInput button_s3(D6, "s3");
-DebounceInput button_s4(D5, "s4");
+DebounceInput button_s3(D5, "s3");
+DebounceInput button_s4(D6, "s4");
 
 // For debugging inputs
 long int last_report_millis = 0;
@@ -71,6 +71,7 @@ void loop() {
 
   // CYCLE BUTTON
   if (button_cycle.update()) {
+    program_state.manual_motion_update();
     // If the state changed, print it
     if (button_cycle.isActive()) {
       Serial.println("Cycle button pressed!");
@@ -107,6 +108,7 @@ void loop() {
 
   // WHITE BUTTON
   if (button_white.update()) {
+    program_state.manual_motion_update();
     // If the state changed, print it
     if (button_white.isActive()) {
       Serial.println("White button pressed!");
@@ -119,6 +121,7 @@ void loop() {
 
   // RGB BUTTON
   if (button_rgb.update()) {
+    program_state.manual_motion_update();
     // If the state changed, print it
     if (button_rgb.isActive()) {
       Serial.println("RGB button pressed!");
@@ -131,6 +134,7 @@ void loop() {
 
   // S1 BUTTON
   if (button_s1.update()) {
+    program_state.manual_motion_update();
     // If the state changed, print it
     if (button_s1.isActive()) {
       Serial.println("S1 button pressed!");
@@ -144,6 +148,7 @@ void loop() {
 
   // S2 BUTTON
   if (button_s2.update()) {
+    program_state.manual_motion_update();
     // If the state changed, print it
     if (button_s2.isActive()) {
       Serial.println("S2 button pressed!");
@@ -158,6 +163,7 @@ void loop() {
   // S3 BUTTON
 
   if (button_s3.update()) {
+    program_state.manual_motion_update();
     // If the state changed, print it
     if (button_s3.isActive()) {
       Serial.println("S3 button pressed!");
@@ -171,6 +177,7 @@ void loop() {
 
   // S4 BUTTON
   if (button_s4.update()) {
+    program_state.manual_motion_update();
     // If the state changed, print it
     if (button_s4.isActive()) {
       Serial.println("S4 button pressed!");
@@ -183,6 +190,8 @@ void loop() {
   }
 
   // Do we go to special secret mode?
+  // This part should be updated when we want to 
+  // add in more fun things!
   if (special_button_pressed) {
     // count how many special buttons are active
     int special_button_count = 0;
@@ -256,63 +265,6 @@ void loop() {
 
 }
 
-// Define various things
-
-void green_set() {
-  digitalWrite(LED_RED, HIGH);
-  digitalWrite(LED_GREEN, LOW);
-  digitalWrite(LED_BLUE, HIGH);
-}
-
-void red_set() {
-  digitalWrite(LED_RED, LOW);
-  digitalWrite(LED_GREEN, HIGH);
-  digitalWrite(LED_BLUE, HIGH);
-}
-
-void blue_set() {
-  digitalWrite(LED_RED, HIGH);
-  digitalWrite(LED_GREEN, HIGH);
-  digitalWrite(LED_BLUE, LOW);
-}
-
-void white_set() {
-  digitalWrite(LED_RED, LOW);
-  digitalWrite(LED_GREEN, LOW);
-  digitalWrite(LED_BLUE, LOW);
-}
-
-
-void set_led(ProgramState &state) {
-  // Set the LED based on the state
-  // This is a placeholder function
-  // It will be replaced with the actual LED control code
-  // For now, we just print the state
-  if (millis() - state.last_cycle_start < 0) {
-    // This might happen in the case of rollover,
-    // reset the last_cycle_start to zero, then
-    state.last_cycle_start = 0;
-  }
-
-  if (millis() - state.last_cycle_start < 10000) {
-    blue_set();
-  }
-  else if (millis() - state.last_cycle_start < 20000) {
-    red_set();
-  }
-  else if (millis() - state.last_cycle_start < 30000) {
-    green_set();
-  }
-  else if (millis() - state.last_cycle_start < 40000) {
-    white_set();
-  }
-  else {
-    state.last_cycle_start = millis();
-    Serial.print("Cycle complete at millis: ");
-    Serial.println(millis());
-    Serial.println(state.last_cycle_start);
-  }
-}
 
 void led_debug_heartbeat(ProgramState &state) {
   if (millis() - state.last_cycle_start < 0) {

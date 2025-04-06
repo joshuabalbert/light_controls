@@ -85,6 +85,14 @@ Mode ProgramState::cycle_mode() {
   return update_mode(new_mode);
 }
 
+void ProgramState::manual_motion_update() {
+  // Pressing a button is just as good as motion
+  // for confirming occupancy.  When a button is triggered,
+  // we'll reset the last motion detected time.
+  // Note: we won't do this for the off button
+  last_motion_detected = millis();
+}
+
 bool ProgramState::handle_sleep() {
   unsigned long curr_time = millis();
   // If we haven't seen motion in a while, prepare for sleep
