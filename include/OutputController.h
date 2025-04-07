@@ -41,7 +41,7 @@ class OutputController {
     void process_mode(ProgramState &state);
     void run_color_jingle(JingleColors color1, JingleColors color2, 
       JingleColors color3, int duration_ms = 1500);
-    void set_rainbow(unsigned long time_diff, uint16_t max_brightness = 3000);
+    void set_rainbow(unsigned long time_diff, uint16_t max_brightness = 900);
 };
 
 #endif

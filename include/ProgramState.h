@@ -28,12 +28,16 @@ class ProgramState {
     unsigned int _blue_pot_pin;
     unsigned int _white_pot_pin;
     Mode _max_usable_mode;
+    unsigned int _wake_to_doze_time;
+    unsigned int _doze_to_sleep_time;
   public:
     ProgramState(unsigned int red_pot_pin=A0, 
                  unsigned int green_pot_pin=A1, 
                  unsigned int blue_pot_pin=A2, 
                  unsigned int white_pot_pin=A3,
-                 Mode max_usable_mode=Mode::CUSTOM_6);
+                 Mode max_usable_mode=Mode::CUSTOM_6,
+                 unsigned int wake_to_doze_time=10000,
+                 unsigned int doze_to_sleep_time=5000);
     unsigned long last_cycle_start;
     unsigned long last_motion_detected;
     unsigned long last_mode_start;
@@ -45,11 +49,6 @@ class ProgramState {
     SmoothAnalogInput green_pot;
     SmoothAnalogInput blue_pot;
     SmoothAnalogInput white_pot;
-
-    // Sleep things
-    unsigned long last_motion_detected_time;
-    unsigned long wake_to_doze_time;
-    unsigned long doze_to_sleep_time;
     
 
     // Mode data

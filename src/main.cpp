@@ -3,13 +3,20 @@
 #include "ProgramState.h"
 #include "OutputController.h"
 
+///////////////////////////////////////////////////////////
+// Set some global parameters for how this should all work!
+///////////////////////////////////////////////////////////
+const bool DEBUG_MODE = false; // Set to false when ready
+const unsigned long WAKE_TO_DOZE_TIME = 10000; // 10 seconds
+const unsigned long DOZE_TO_SLEEP_TIME = 5000; // 5 seconds past doze
+
+///////////////////////////////////////////////////////////
+
 // PWM stuff
 const int PWM_CHANNEL = 0;
-const int PWM_FREQ = 15000;
-const int PWM_RESOLUTION = 12;
+const int PWM_FREQ = 20000;
+const int PWM_RESOLUTION = 10;
 const int MAX_PWM = (1 << PWM_RESOLUTION) - 1; // Clever way to get 2^PWM_RESOLUTION - 1
-const int full_cycle_time = 40000;
-const int scale_factor = full_cycle_time/MAX_PWM;
 
 // set up program state in global scope
 ProgramState program_state;
@@ -18,7 +25,6 @@ ProgramState program_state;
 OutputController output_controller;
 
 // Declare a function to set the LED
-void set_led(ProgramState &state);
 void led_debug_heartbeat(ProgramState &state);
 
 // set up digital input pins
@@ -40,6 +46,7 @@ int cycle_counter = 0;
 int last_changed_milli = 0;
 int press_counter = 0;
 
+// Setup function called once after power up or reset
 void setup() {
   // set up console
   Serial.begin(115200);
@@ -52,6 +59,24 @@ void setup() {
 
   Serial.print("Using PWM resolution of: ");
   Serial.println(PWM_RESOLUTION);
+
+  // Get the program state set up
+  program_state = ProgramState(
+    A0, // Red pot pin
+    A1, // Green pot pin
+    A2, // Blue pot pin
+    A3, // White pot pin
+    Mode::CUSTOM_6, // Max usable mode (aside from secrets)
+    WAKE_TO_DOZE_TIME, // Wake to doze time
+    DOZE_TO_SLEEP_TIME); // Doze to sleep time
+
+  // Initially, the arduino LEDs should be off
+  // This requires writing the to high main ones
+  // to high and the built-in to low
+  digitalWrite(LED_RED, HIGH);
+  digitalWrite(LED_GREEN, HIGH);
+  digitalWrite(LED_BLUE, HIGH);
+  digitalWrite(LED_BUILTIN, LOW);
 
 }
 
@@ -209,9 +234,9 @@ void loop() {
   }
 
   // Do the background task
-  // set_led(program_state);
-  led_debug_heartbeat(program_state);
-
+  if (DEBUG_MODE) {
+    led_debug_heartbeat(program_state);
+  }
 
   // Read motion sensors, handle sleep decision
   // Only run this once per ten milliseconds

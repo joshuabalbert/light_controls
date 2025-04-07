@@ -21,8 +21,9 @@ OutputController::OutputController(unsigned int red_output_pwm_pin,
   _rainbow_start_time = 0;
 
   // initialize PWM pins and parameters
-  const int pwm_freq = 5000;
-  const int pwm_resolution = 12;
+  // Set the PWM frequency above human hearing range
+  const int pwm_freq = 20000;
+  const int pwm_resolution = 10;
   const int max_pwm = (1 << pwm_resolution) - 1; // Clever way to get 2^PWM_RESOLUTION - 1
 
   _red_pwm_channel = 0;
@@ -68,6 +69,11 @@ void OutputController::enter_mode(ProgramState &state) {
 
   // Reset the mode start time
   state.last_mode_start = millis();
+  
+  unsigned int red_out = 0;
+  unsigned int green_out = 0;
+  unsigned int blue_out = 0;
+  unsigned int white_out = 0;
 
   switch(state.curr_mode) {
     case Mode::OFF:
@@ -75,7 +81,10 @@ void OutputController::enter_mode(ProgramState &state) {
       ledcWrite(_red_pwm_channel, 0);
       ledcWrite(_green_pwm_channel, 0);
       ledcWrite(_blue_pwm_channel, 0);
-      run_color_jingle(JingleColors::WHITE, JingleColors::WHITE, JingleColors::OFF);
+      if (state.last_mode != Mode::OFF) {
+        // Only run the jingle if we're not already off
+        run_color_jingle(JingleColors::WHITE, JingleColors::WHITE, JingleColors::OFF);
+      }
       break;
     case Mode::SLEEP_PREP:
       // Turn off all the lights
@@ -86,10 +95,14 @@ void OutputController::enter_mode(ProgramState &state) {
       break;
     case Mode::RGB:
       // Set the lights to the RGB values
-      // Rely on convenience that ADC is 12-bit as is PWM
-      ledcWrite(_red_pwm_channel, state.red_pot_val);
-      ledcWrite(_green_pwm_channel, state.green_pot_val);
-      ledcWrite(_blue_pwm_channel, state.blue_pot_val);
+      // Convert 12-bit to 10-bit
+      red_out = state.red_pot_val >> 2;
+      green_out = state.green_pot_val >> 2;
+      blue_out = state.blue_pot_val >> 2;
+      // Set the lights to the RGB values
+      ledcWrite(_red_pwm_channel, red_out);
+      ledcWrite(_green_pwm_channel, green_out);
+      ledcWrite(_blue_pwm_channel, blue_out);
       run_color_jingle(JingleColors::RED, JingleColors::GREEN, JingleColors::BLUE);
       Serial.print("Setting RGB maybe TO ");
       Serial.print(state.red_pot_val);
@@ -106,9 +119,13 @@ void OutputController::enter_mode(ProgramState &state) {
       break;
     case Mode::WHITE:
       // Set the lights to white
-      ledcWrite(_red_pwm_channel, state.white_pot_val);
-      ledcWrite(_green_pwm_channel, state.white_pot_val);
-      ledcWrite(_blue_pwm_channel, state.white_pot_val);
+      // Convert 12-bit to 10-bit
+      white_out = state.white_pot_val >> 2;
+      // Set the lights to white
+      ledcWrite(_red_pwm_channel, white_out);
+      ledcWrite(_green_pwm_channel, white_out);
+      ledcWrite(_blue_pwm_channel, white_out);
+
       run_color_jingle(JingleColors::WHITE, JingleColors::OFF, JingleColors::WHITE);
       break;
     case Mode::CUSTOM_1:
@@ -118,7 +135,7 @@ void OutputController::enter_mode(ProgramState &state) {
       Serial.println(_red_pwm_channel);
       Serial.println(_green_pwm_channel);
       Serial.println(_blue_pwm_channel);
-      ledcWrite(_red_pwm_channel, 400);
+      ledcWrite(_red_pwm_channel, 250);
       ledcWrite(_green_pwm_channel, 0);
       ledcWrite(_blue_pwm_channel, 0);
       run_color_jingle(JingleColors::RED, JingleColors::OFF, JingleColors::RED);
@@ -127,7 +144,7 @@ void OutputController::enter_mode(ProgramState &state) {
       // Set the lights to custom 2
       Serial.println("Setting custom 2");
       ledcWrite(_red_pwm_channel, 0);
-      ledcWrite(_green_pwm_channel, 400);
+      ledcWrite(_green_pwm_channel, 250);
       ledcWrite(_blue_pwm_channel, 0);
       run_color_jingle(JingleColors::GREEN, JingleColors::OFF, JingleColors::GREEN);
       break;
@@ -136,14 +153,14 @@ void OutputController::enter_mode(ProgramState &state) {
       Serial.println("Setting custom 3");
       ledcWrite(_red_pwm_channel, 0);
       ledcWrite(_green_pwm_channel, 0);
-      ledcWrite(_blue_pwm_channel, 400);
+      ledcWrite(_blue_pwm_channel, 250);
       run_color_jingle(JingleColors::BLUE, JingleColors::OFF, JingleColors::BLUE);
       break;
     case Mode::CUSTOM_4:
       // Set the lights to custom 4
       Serial.println("Setting custom 4");
-      ledcWrite(_red_pwm_channel, 400);
-      ledcWrite(_green_pwm_channel, 400);
+      ledcWrite(_red_pwm_channel, 250);
+      ledcWrite(_green_pwm_channel, 250);
       ledcWrite(_blue_pwm_channel, 0);
       run_color_jingle(JingleColors::YELLOW, JingleColors::OFF, JingleColors::YELLOW);
       break;
@@ -151,26 +168,30 @@ void OutputController::enter_mode(ProgramState &state) {
       // Set the lights to custom 5
       Serial.println("Setting custom 5");
       ledcWrite(_red_pwm_channel, 0);
-      ledcWrite(_green_pwm_channel, 400);
-      ledcWrite(_blue_pwm_channel, 400);
+      ledcWrite(_green_pwm_channel, 250);
+      ledcWrite(_blue_pwm_channel, 250);
       run_color_jingle(JingleColors::CYAN, JingleColors::OFF, JingleColors::CYAN);
       break;
     case Mode::CUSTOM_6:
       // Set the lights to custom 6
       Serial.println("Setting custom 6");
-      ledcWrite(_red_pwm_channel, 400);
+      ledcWrite(_red_pwm_channel, 250);
       ledcWrite(_green_pwm_channel, 0);
-      ledcWrite(_blue_pwm_channel, 400);
+      ledcWrite(_blue_pwm_channel, 250);
       run_color_jingle(JingleColors::MAGENTA, JingleColors::OFF, JingleColors::MAGENTA);
       break;
     case Mode::CUSTOM_7:
       // Set the lights to custom 7
       // BEGIN THE SECRET RAINBOW!!!
       Serial.println("Setting custom 7");
-      ledcWrite(_red_pwm_channel, 3000);
+      ledcWrite(_red_pwm_channel, 800);
       ledcWrite(_green_pwm_channel, 0);
       ledcWrite(_blue_pwm_channel, 0);
-      _rainbow_start_time = millis();
+      // don't reset the rainbow if we just briefly started to doze
+      if (state.last_mode != Mode::SLEEP_PREP) {
+        _rainbow_start_time = millis();
+      }
+
       run_color_jingle(JingleColors::MAGENTA, JingleColors::CYAN, JingleColors::YELLOW);
       break;
     case Mode::CUSTOM_8:
@@ -195,6 +216,10 @@ void OutputController::process_mode(ProgramState &state) {
   // Regardless of mode, check if we're in the jingle!
   // Also, check if we're just after it, to turn it off
   unsigned long curr_time = millis();
+  unsigned int white_out = 0;
+  unsigned int red_out = 0;
+  unsigned int green_out = 0;
+  unsigned int blue_out = 0;
   if (curr_time - _last_jingle_time < _jingle_duration + 100) {
     // We're in the jingle, set the lights to the jingle colors
     JingleColors curr_color = JingleColors::OFF;
@@ -231,16 +256,23 @@ void OutputController::process_mode(ProgramState &state) {
       break;
     case Mode::RGB:
       // Set the lights to the RGB values
-      // Rely on convenience that ADC is 12-bit as is PWM
-      ledcWrite(_red_pwm_channel, state.red_pot_val);
-      ledcWrite(_green_pwm_channel, state.green_pot_val);
-      ledcWrite(_blue_pwm_channel, state.blue_pot_val);
+      // Convert 12-bit to 10-bit
+      red_out = state.red_pot_val >> 2;
+      green_out = state.green_pot_val >> 2;
+      blue_out = state.blue_pot_val >> 2;
+      // Set the lights to the RGB values
+      ledcWrite(_red_pwm_channel, red_out);
+      ledcWrite(_green_pwm_channel, green_out);
+      ledcWrite(_blue_pwm_channel, blue_out);
       break;
     case Mode::WHITE:
       // Set the lights to white
-      ledcWrite(_red_pwm_channel, state.white_pot_val);
-      ledcWrite(_green_pwm_channel, state.white_pot_val);
-      ledcWrite(_blue_pwm_channel, state.white_pot_val);
+      // Convert 12-bit to 10-bit
+      white_out = state.white_pot_val >> 2;
+      // Set the lights to white
+      ledcWrite(_red_pwm_channel, white_out);
+      ledcWrite(_green_pwm_channel, white_out);
+      ledcWrite(_blue_pwm_channel, white_out);
       break;
     case Mode::CUSTOM_1:
       // Set the lights to custom 1

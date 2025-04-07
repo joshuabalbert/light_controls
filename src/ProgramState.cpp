@@ -9,7 +9,9 @@ ProgramState::ProgramState(unsigned int red_pot_pin,
                            unsigned int green_pot_pin, 
                            unsigned int blue_pot_pin, 
                            unsigned int white_pot_pin,
-                           Mode max_usable_mode) {
+                           Mode max_usable_mode,
+                           unsigned int wake_to_doze_time,
+                           unsigned int doze_to_sleep_time) {
   last_cycle_start = millis();
   last_motion_detected = millis();
   last_mode_start = millis();
@@ -27,8 +29,8 @@ ProgramState::ProgramState(unsigned int red_pot_pin,
   white_pot = SmoothAnalogInput(_white_pot_pin);
 
   // sleep things
-  wake_to_doze_time = 10000; // 10 seconds
-  doze_to_sleep_time = 5000; // 5 seconds past doze
+  _wake_to_doze_time = wake_to_doze_time; // 10 seconds
+  _doze_to_sleep_time = doze_to_sleep_time; // 5 seconds past doze
 
   // initialize logic mode
   curr_mode = Mode::OFF;
@@ -103,7 +105,7 @@ bool ProgramState::handle_sleep() {
     last_motion_detected = curr_time;
   }
   if (curr_mode != Mode::SLEEP_PREP && curr_mode != Mode::OFF) {
-    if (curr_time - last_motion_detected > wake_to_doze_time) {
+    if (curr_time - last_motion_detected > _wake_to_doze_time) {
       update_mode(Mode::SLEEP_PREP);
       Serial.println("Going to sleep prep mode");
       return true;
@@ -111,7 +113,7 @@ bool ProgramState::handle_sleep() {
   }
   // If we are in SLEEP_PREP, check if we should go to sleep
   if (curr_mode == Mode::SLEEP_PREP) {
-    if (curr_time - last_motion_detected > doze_to_sleep_time + wake_to_doze_time) {
+    if (curr_time - last_motion_detected > _doze_to_sleep_time + _wake_to_doze_time) {
       // Go to sleep for good now!
       update_mode(Mode::OFF);
       Serial.println("Going to sleep mode from sleep prep");
