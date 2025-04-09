@@ -22,6 +22,9 @@ OutputController::OutputController(unsigned int red_output_pwm_pin,
 
   // initialize PWM pins and parameters
   // Set the PWM frequency above human hearing range
+  // Note that the PWM frequency * resolution must be under 40 MHz, the clock
+  // frequency used by the PWM generator on the ESP32.
+  // See: https://lastminuteengineers.com/esp32-pwm-tutorial/
   const int pwm_freq = 20000;
   const int pwm_resolution = 10;
   const int max_pwm = (1 << pwm_resolution) - 1; // Clever way to get 2^PWM_RESOLUTION - 1

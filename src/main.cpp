@@ -7,8 +7,10 @@
 // Set some global parameters for how this should all work!
 ///////////////////////////////////////////////////////////
 const bool DEBUG_MODE = false; // Set to false when ready
-const unsigned long WAKE_TO_DOZE_TIME = 10000; // 10 seconds
+const unsigned long WAKE_TO_DOZE_TIME = 30000; // 30 seconds
 const unsigned long DOZE_TO_SLEEP_TIME = 5000; // 5 seconds past doze
+const double wake_dial_deriv_threshold = 1.2; // dial speed to keep from sleep
+const double mode_grab_dial_deriv_threshold = 1.85; // dial speed to grab mode
 
 ///////////////////////////////////////////////////////////
 
@@ -85,10 +87,10 @@ void loop() {
   cycle_counter++;
   // Update the input states
 
-  // Check all the buttons here!!
+  // Check all the inputs here!!
   // We're only going to consider the last activation of the iteration
   // If two buttons are pressed at exactly the same time, we'll only consider the last one
-  // Later on, we may add in functionality for multiple buttons pressed at once
+  // Later on, we will add in functionality for multiple buttons pressed at once
   // Okay, fine, here's one: if multiple of the special buttons are pressed at once, we'll go
   // to special mode with rainbows...
   bool mode_updated = false;
@@ -233,6 +235,35 @@ void loop() {
     }
   }
 
+  // Read the analog inputs
+  program_state.read_pot_values();
+
+  // Check analog inputs for sleep and mode grab
+  // If dial speed is above threshold, prevent sleep
+  if (program_state.red_pot.get_smooth_deriv() > wake_dial_deriv_threshold ||
+      program_state.green_pot.get_smooth_deriv() > wake_dial_deriv_threshold ||
+      program_state.blue_pot.get_smooth_deriv() > wake_dial_deriv_threshold ||
+      program_state.white_pot.get_smooth_deriv() > wake_dial_deriv_threshold) {
+    program_state.manual_motion_update();
+  }
+
+  // Check for mode grab
+  if (program_state.curr_mode != Mode::OFF) {
+    if (program_state.curr_mode != Mode::RGB) {
+      if (abs(program_state.red_pot.get_smooth_deriv()) > mode_grab_dial_deriv_threshold ||
+          abs(program_state.green_pot.get_smooth_deriv()) > mode_grab_dial_deriv_threshold ||
+          abs(program_state.blue_pot.get_smooth_deriv()) > mode_grab_dial_deriv_threshold) {
+        program_state.update_mode(Mode::RGB);
+        mode_updated = true;
+      }
+    } else if (program_state.curr_mode != Mode::WHITE) {
+      if (abs(program_state.white_pot.get_smooth_deriv()) > mode_grab_dial_deriv_threshold) {
+        program_state.update_mode(Mode::WHITE);
+        mode_updated = true;
+      }
+    }
+  }
+
   // Do the background task
   if (DEBUG_MODE) {
     led_debug_heartbeat(program_state);
@@ -249,8 +280,7 @@ void loop() {
     }
   }
 
-  // Read the analog inputs
-  program_state.read_pot_values();
+
 
   // Handle the logic
   if (mode_updated) {
@@ -261,36 +291,47 @@ void loop() {
 
   // Write the analog inputs and some output data once per second
   // This is for debugging
-  if (curr_time % 1000 == 0) {
-    if (curr_time - last_report_millis > 1) {
-      last_report_millis = curr_time;
-      Serial.print(curr_time);
-      Serial.print(" Red: ");
-      Serial.print(program_state.red_pot_val);
-      Serial.print(", Green: ");
-      Serial.print(program_state.green_pot_val);
-      Serial.print(", Blue: ");
-      Serial.print(program_state.blue_pot_val);
-      Serial.print(", White: ");
-      Serial.print(program_state.white_pot_val);
-      Serial.print(", Motion A: ");
-      Serial.print(program_state.motion_detector_a.update());
-      Serial.print(": ");
-      Serial.print(program_state.motion_detector_a.occupied());
-      Serial.print(", Motion B: ");
-      Serial.print(program_state.motion_detector_b.update());
-      Serial.print(": ");
-      Serial.println(program_state.motion_detector_b.occupied());
-      Serial.print("Current, last mode: ");
-      Serial.print(static_cast<int>(program_state.curr_mode));
-      Serial.print(", ");
-      Serial.println(static_cast<int>(program_state.last_mode));
+  if (DEBUG_MODE) {
+
+    if (curr_time % 1000 == 0) {
+      if (curr_time - last_report_millis > 1) {
+        last_report_millis = curr_time;
+        Serial.print(curr_time);
+        Serial.print(" Red: ");
+        Serial.print(program_state.red_pot_val);
+        Serial.print(", Green: ");
+        Serial.print(program_state.green_pot_val);
+        Serial.print(", Blue: ");
+        Serial.print(program_state.blue_pot_val);
+        Serial.print(", White: ");
+        Serial.print(program_state.white_pot_val);
+        Serial.print(", Motion A: ");
+        Serial.print(program_state.motion_detector_a.update());
+        Serial.print(": ");
+        Serial.print(program_state.motion_detector_a.occupied());
+        Serial.print(", Motion B: ");
+        Serial.print(program_state.motion_detector_b.update());
+        Serial.print(": ");
+        Serial.println(program_state.motion_detector_b.occupied());
+        Serial.print("Current, last mode: ");
+        Serial.print(static_cast<int>(program_state.curr_mode));
+        Serial.print(", ");
+        Serial.println(static_cast<int>(program_state.last_mode));
+        Serial.print("Dial speeds: ");
+        Serial.print(program_state.red_pot.get_smooth_deriv());
+        Serial.print(", ");
+        Serial.print(program_state.green_pot.get_smooth_deriv());
+        Serial.print(", ");
+        Serial.print(program_state.blue_pot.get_smooth_deriv());
+        Serial.print(", ");
+        Serial.println(program_state.white_pot.get_smooth_deriv());
+      }
     }
   }
 
 }
 
-
+// A function to blink the built-in LED for testing to confirm it is on
 void led_debug_heartbeat(ProgramState &state) {
   if (millis() - state.last_cycle_start < 0) {
     // This might happen in the case of rollover,

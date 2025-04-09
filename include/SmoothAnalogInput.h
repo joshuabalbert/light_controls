@@ -42,6 +42,7 @@ private:
   uint8_t _pin;  // GPIO pin number
   double _base_long_ema_factor; // Exponential moving average factor before adjustment
   double _long_ema; // Long-term exponential moving average
+  double _long_ema_derivative; // Derivative of the long-term EMA
   double _short_ema_factor; // Spike reduction moving average factor
   double _short_ema; // Short-term exponential moving average
   uint16_t _last_read; // Last reading from the ADC
@@ -115,6 +116,15 @@ public:
   inline uint16_t update_and_get_raw() {
     update();
     return get_raw_value();
+  };
+
+  /**
+   * Get the current derivative of the long-term EMA
+   * 
+   * @return The derivative of the long-term EMA
+   */
+  inline double get_smooth_deriv() const {
+    return _long_ema_derivative;
   };
 
 };

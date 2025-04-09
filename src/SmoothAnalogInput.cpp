@@ -8,6 +8,7 @@ SmoothAnalogInput::SmoothAnalogInput(uint8_t pin,
   : _pin(pin), 
     _base_long_ema_factor(1 - exp(-1.0 * M_LN2 / long_half_life_ms)), // HL->tau
     _long_ema(0),
+    _long_ema_derivative(0),
     _short_ema_factor(1 - exp(-1.0 * M_LN2 / short_half_life_ms)), // HL->tau
     _short_ema(0),
     _last_read(0),
@@ -68,8 +69,13 @@ bool SmoothAnalogInput::update() {
     long_ema_factor *= constrain(0.95 * time_since_last_read, 1, 10);
   }
 
+  double last_long_ema = _long_ema;
+
   // Update the long-term EMA
   _long_ema = long_ema_factor * reading + (1 - long_ema_factor) * _long_ema;
+
+  // Get the derivative of the long-term EMA
+  _long_ema_derivative = (_long_ema - last_long_ema) / time_since_last_read;
 
   // Update the short-term EMA
   _short_ema = _short_ema_factor * reading + (1 - _short_ema_factor) * _short_ema;
